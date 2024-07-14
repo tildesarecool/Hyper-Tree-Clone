@@ -1,10 +1,17 @@
-# Hyper Tree Clone
+# Hyper Tree Clone "For Windows" - seriously. I have no interest in mulit-platform. It's just for windows. 
 # https://github.com/tildesarecool/Hyper-Tree-Clone.git
 # initial start 12 July 2024
+# python -m venv venv
+#  python -m pip install --upgrade pip   
+# pip install -r .\requirements.txt   
+# .\venv\Scripts\activate
+
+
 
 import os, shutil, time, threading, argparse
 import multiprocessing as mp
 from multiprocessing import Pool
+import msgpack
 #import ctypes
 
 # Flag to control the progress indicator thread
@@ -89,21 +96,46 @@ def progress_indicator():
         if int(elapsed_time) % 20 == 0:
             print("#", end="", flush=True)
 
+
+def create_msgpack(directory):
+    """Create a msgpack file from the directory tree."""
+    file_list = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            file_list.append(os.path.relpath(os.path.join(root, file), directory))
+    
+    msgpack_file = os.path.join(os.path.dirname(__file__), 'directory_tree.msgpack')
+    with open(msgpack_file, 'wb') as f:
+        msgpack.pack(file_list, f)
+    
+    print(f"msgpack file created at {msgpack_file}")
+
+
 def main():
     # Copy files from the source directory to the destination directory using multiprocessing
 
     global progress_indicator_running
 
-
-
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Hyper Tree Clone Utility")
-    parser.add_argument("source", help="Source directory")
-    parser.add_argument("destination", help="Destination directory")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--create_msgpack", help="Create a msgpack file from the directory tree")
+    group.add_argument("--copy", nargs=2, metavar=('source', 'destination'), help="Copy files from source to destination")
+
     args = parser.parse_args()
 
-    source_dir = args.source
-    destination_dir = args.destination
+    if args.create_msgpack:
+        create_msgpack(args.create_msgpack)
+        return
+
+    if args.copy:
+        source_dir, destination_dir = args.copy
+    else:
+        parser.error("Invalid arguments. Use --create_msgpack or --copy <source> <destination>.")
+
+
+#    source_dir = args.source
+#    destination_dir = args.destination
 
 #    source_dir = "\"" + source_dir
 #    source_dir = source_dir + "\""
