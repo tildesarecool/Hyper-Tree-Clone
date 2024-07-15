@@ -79,3 +79,13 @@ Well much closer. Apparently my C: drive is not very fast. And the script is bar
 ##### 14 July 2024
 
 It took a while but the script is creating a message pack binary based on the directory tree. I haven't actually tried a file copy with it yet, just managed to have it create a message pack binary. 
+
+##### 15 July 2024
+
+The good news and the bad news.
+
+I got the file copying to work using a a binary file as the reference. Basically the "source" of the file copy operation is this message pack file. It ook entirely too long to get to work.
+
+The bad news is that it's some how a slower copy operation than just using drag/drop to copy when I tested it.
+
+Also bad news against my better judgement I used a lot of GPT assistance to writ the functionality. Like a lot. So although it technically works the code is an extreme mess. I'm just resigned to the assumption I'll be re-writing the whole thing from scratch. Which is likely what I would end up doing anyway.  Abandon all hope any who dare to try and veiw the code. It will not go well.

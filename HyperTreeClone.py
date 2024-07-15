@@ -6,8 +6,6 @@
 # pip install -r .\requirements.txt   
 # .\venv\Scripts\activate
 
-
-
 import os, shutil, time, threading, argparse
 import multiprocessing as mp
 from multiprocessing import Pool
@@ -41,8 +39,8 @@ def copy_file(file_info):
     src, dest = file_info
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     shutil.copy2(src, dest)    
-    
-    
+
+
 def copy_files(source_dir, destination_dir):
     # Check the destination file system format
     drive_format = get_drive_format(destination_dir)
@@ -80,6 +78,55 @@ def copy_files(source_dir, destination_dir):
     with Pool(processes=cpu_count) as pool:
         pool.map(copy_files_chunk, file_chunks)
     return True
+    
+    
+def copy_files_from_msgpack(msgpack_file, destination_dir):
+    # Load file paths from msgpack file
+    with open(msgpack_file, 'rb') as f:
+        file_list = msgpack.unpack(f)
+    
+    # Check the destination file system format
+    drive_format = get_drive_format(destination_dir)
+
+    # Prepare file list with full source and destination paths
+    full_file_list = []
+    missing_files = []
+    for src_path in file_list:
+        if not os.path.exists(src_path):
+            missing_files.append(src_path)
+            continue
+        rel_path = os.path.relpath(src_path, os.path.commonpath(file_list))
+        dest_path = os.path.join(destination_dir, rel_path)
+        full_file_list.append((src_path, dest_path))
+
+    # Log missing files if any
+    if missing_files:
+        print("The following files listed in the msgpack file do not exist:")
+        for missing_file in missing_files:
+            print(missing_file)
+        print("Copy operation aborted due to missing files.")
+        return False
+
+    if drive_format == 'FAT32':
+        for src_path, dest_path in full_file_list:
+            if os.path.getsize(src_path) > FAT32_MAX_FILE_SIZE:
+                print(f"Error: The file {src_path} exceeds the 4GB limit of FAT32 file system.")
+                print("Copy operation aborted.")
+                return False
+
+    # Determine the number of CPUs to use
+    total_cpus = mp.cpu_count()
+    avg_file_size = sum(os.path.getsize(f[0]) for f in full_file_list if os.path.exists(f[0])) // len(full_file_list) if full_file_list else 0
+    cpu_count = min(total_cpus, max(1, avg_file_size // (sum(os.path.getsize(f[0]) for f in full_file_list if os.path.exists(f[0])) // total_cpus)))
+
+    # Divide the file list into chunks for multiprocessing
+    chunk_size = len(full_file_list) // cpu_count
+    file_chunks = [full_file_list[i:i + chunk_size] for i in range(0, len(full_file_list), chunk_size)]
+
+    with Pool(processes=cpu_count) as pool:
+        pool.map(copy_files_chunk, file_chunks)
+    return True
+
 
 def copy_files_chunk(file_chunk):
     for file_info in file_chunk:
@@ -102,7 +149,7 @@ def create_msgpack(directory):
     file_list = []
     for root, _, files in os.walk(directory):
         for file in files:
-            file_list.append(os.path.relpath(os.path.join(root, file), directory))
+            file_list.append(os.path.join(root, file))
     
     msgpack_file = os.path.join(os.path.dirname(__file__), 'directory_tree.msgpack')
     with open(msgpack_file, 'wb') as f:
@@ -121,6 +168,7 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--create_msgpack", help="Create a msgpack file from the directory tree")
     group.add_argument("--copy", nargs=2, metavar=('source', 'destination'), help="Copy files from source to destination")
+    group.add_argument("--use_msgpack", nargs=2, metavar=('msgpack_file', 'destination'), help="Copy files using msgpack file as reference")
 
     args = parser.parse_args()
 
@@ -130,6 +178,8 @@ def main():
 
     if args.copy:
         source_dir, destination_dir = args.copy
+    elif args.use_msgpack:
+        msgpack_file, destination_dir = args.use_msgpack
     else:
         parser.error("Invalid arguments. Use --create_msgpack or --copy <source> <destination>.")
 
@@ -139,7 +189,7 @@ def main():
 
 #    source_dir = "\"" + source_dir
 #    source_dir = source_dir + "\""
-    print(f"value of source dir is {source_dir} and file type is {type(source_dir)}")
+    #print(f"value of source dir is {source_dir} and file type is {type(source_dir)}")
 
     start_time = time.time()
     
@@ -151,8 +201,12 @@ def main():
 
     try:
         # start the copy operation
-        print(f"starting file copy...\n")
-        copyOperation = copy_files(source_dir, destination_dir)
+        if args.copy:
+            # copy file from source dir to destination dir using multiprocessing
+            print(f"starting file copy...\n")
+            copyOperation = copy_files(source_dir, destination_dir)
+        elif args.use_msgpack:
+            copyOperation = copy_files_from_msgpack(msgpack_file, destination_dir)
     finally:
         # stop progress indicator thread
         progress_indicator_running = False
@@ -177,3 +231,40 @@ if __name__ == "__main__":
     main()
 #     drive_format = get_drive_format(DESTINATION_DIR)
 #     print(f"value of drive format is {drive_format}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
