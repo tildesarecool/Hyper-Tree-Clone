@@ -75,3 +75,7 @@ Test 2 of HyperTreeClone, command line
 2 minutes 7.12 seconds
 
 Well much closer. Apparently my C: drive is not very fast. And the script is barely comparable with robocopy. 
+
+##### 14 July 2024
+
+It took a while but the script is creating a message pack binary based on the directory tree. I haven't actually tried a file copy with it yet, just managed to have it create a message pack binary. 
