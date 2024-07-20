@@ -6,10 +6,10 @@
 # pip install -r .\requirements.txt   
 # .\venv\Scripts\activate
 
-import os, shutil, time, threading, argparse, sys
+import os, shutil, time, threading, argparse, sys, msgpack
 import multiprocessing as mp
 from multiprocessing import Pool
-import msgpack
+#import msgpack
 #import ctypes
 
 # Flag to control the progress indicator thread
