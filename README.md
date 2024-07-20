@@ -1,8 +1,8 @@
 # Hyper Tree Clone
 
-### Extremely fast directory tree duplicator for Windows.
+### ~~Extremely~~ Theoreticallly somewhat fast directory tree duplicator for Windows.
 
-This is something of a utility spin off from another script I am developing called [tiny11 python edition](https://github.com/tildesarecool/Tiny11PyEd). Which in turn is heavily inspired by a PowerShell script called Tiny11.
+This is something of a utility spin off from another script I am developing called [tiny11 python edition](https://github.com/tildesarecool/Tiny11PyEd). Which in turn is heavily inspired by a PowerShell script called Tiny11 (which in turn is inspired by something else...and so on).
 
 I wanted to see how fast of a file copy utility I could make after watching and reading about the [1 billion row challenge](https://github.com/gunnarmorling/1brc/tree/main?tab=readme-ov-file) and associated Python version of the solution (all of which is entirely over my head).
 
@@ -162,6 +162,27 @@ same tree file copy using msgpack:
 
 Much greater difference in copy operations between the two and clearly the msgpack approach is better.
 
+It occured to me I should probably test the mounted ISO copy since that was the original reason I wanted to make this copy utility.
+
+I used the unmodified Win 11 ISO downloaded from Microsoft mounted on an internal NVME drive. And copied the contents to a folder on the same NVME drive:
+
+Total size: 6.34GBs
+First, create the msgpack file:
+``` .\HyperTreeClone.py  --create_msgpack "G:"``` 
+Then, try the file copy with the msgpack file:
+```.\HyperTreeClone.py  --use_msgpack "directory_tree.msgpack" "P:\Windows Install Customization_copy_2"```
+
+Time reported: 54 seconds
+
+Then same file copy with plain file copy:
+```.\HyperTreeClone.py  --copy "G:" "P:\Win11DVD_2"```
+
+Time reported: 44 seconds
+
+This kind of a depressing result considering I thought using a binary file reference would be faster than a plain file copy. 
+
+
+
 The bad news?
 
 There's quite a few "long hanging fruit" improvements to make:
@@ -172,3 +193,9 @@ There's quite a few "long hanging fruit" improvements to make:
 * I would like to have an option of using a message pack file or text-based file like JSON. For testing and troubleshooting if nothing else.
 
 Besides that the code needs to be cleaned up for readaibility, documentation and the argument help needs much better wording and extensive examples.
+
+Actually, even worse: I used a stop watch and tested a plain old drag-and-drop copy of the same tree 
+and got **17 seconds**. 
+
+So I went through these 8 days or so of creating this side utility to...create a script that's 
+somehow slower then Windows copy. Yea?
