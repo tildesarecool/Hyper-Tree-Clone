@@ -42,91 +42,91 @@ def copy_file(file_info):
     shutil.copy2(src, dest)    
 
 
-def copy_files(source_dir, destination_dir):
-    # Check the destination file system format
-    drive_format = get_drive_format(destination_dir)
-
-    # If the destination is FAT32, check for files larger than 4GB
-    if drive_format == 'FAT32':
-        for root, _, files in os.walk(source_dir):
-            for file in files:
-                src_path = os.path.join(root, file)
-                if os.path.getsize(src_path) > FAT32_MAX_FILE_SIZE:
-                    print(f"Error: The file {src_path} exceeds the 4GB limit of FAT32 file system.")
-#                    print(f"Options - Assuming WIM file: \n1. Split the WIM file into two files (beyond the scope of this script). \
-#\n2. Select a destination not formatted with FAT32 and see if WIM file can be shrunk then try copy again.")
-                    print("Copy operation aborted.")
-                    return False
-
-    # Gather all files to be copied
-    file_list = []
-    for root, _, files in os.walk(source_dir):
-        for file in files:
-            src_path = os.path.join(root, file)
-            rel_path = os.path.relpath(src_path, source_dir)
-            dest_path = os.path.join(destination_dir, rel_path)
-            file_list.append((src_path, dest_path))
-
-    # Determine the number of CPUs to use
-    #TOTAL_CPUS = mp.cpu_count()
-    avg_file_size = sum(os.path.getsize(f[0]) for f in file_list) // len(file_list) if file_list else 0
-    cpu_count = min(TOTAL_CPUS, max(1, avg_file_size // (sum(os.path.getsize(f[0]) for f in file_list) // TOTAL_CPUS)))
-
-    # Divide the file list into chunks for multiprocessing
-    chunk_size = len(file_list) // cpu_count
-    file_chunks = [file_list[i:i + chunk_size] for i in range(0, len(file_list), chunk_size)]
-
-    with Pool(processes=cpu_count) as pool:
-        pool.map(copy_files_chunk, file_chunks)
-    return True
-    
-    
-def copy_files_from_msgpack(msgpack_file, destination_dir):
-    # Load file paths from msgpack file
-    with open(msgpack_file, 'rb') as f:
-        file_list = msgpack.unpack(f)
-    
-    # Check the destination file system format
-    drive_format = get_drive_format(destination_dir)
-
-    # Prepare file list with full source and destination paths
-    full_file_list = []
-    missing_files = []
-    for src_path in file_list:
-        if not os.path.exists(src_path):
-            missing_files.append(src_path)
-            continue
-        rel_path = os.path.relpath(src_path, os.path.commonpath(file_list))
-        dest_path = os.path.join(destination_dir, rel_path)
-        full_file_list.append((src_path, dest_path))
-
-    # Log missing files if any
-    if missing_files:
-        print("The following files listed in the msgpack file do not exist:")
-        for missing_file in missing_files:
-            print(missing_file)
-        print("Copy operation aborted due to missing files.")
-        return False
-
-    if drive_format == 'FAT32':
-        for src_path, dest_path in full_file_list:
-            if os.path.getsize(src_path) > FAT32_MAX_FILE_SIZE:
-                print(f"Error: The file {src_path} exceeds the 4GB limit of FAT32 file system.")
-                print("Copy operation aborted.")
-                return False
-
-    # Determine the number of CPUs to use
-    #total_cpus = mp.cpu_count()
-    avg_file_size = sum(os.path.getsize(f[0]) for f in full_file_list if os.path.exists(f[0])) // len(full_file_list) if full_file_list else 0
-    cpu_count = min(TOTAL_CPUS, max(1, avg_file_size // (sum(os.path.getsize(f[0]) for f in full_file_list if os.path.exists(f[0])) // TOTAL_CPUS)))
-
-    # Divide the file list into chunks for multiprocessing
-    chunk_size = len(full_file_list) // cpu_count
-    file_chunks = [full_file_list[i:i + chunk_size] for i in range(0, len(full_file_list), chunk_size)]
-
-    with Pool(processes=cpu_count) as pool:
-        pool.map(copy_files_chunk, file_chunks)
-    return True
+#def copy_files(source_dir, destination_dir):
+#    # Check the destination file system format
+#    drive_format = get_drive_format(destination_dir)
+#
+#    # If the destination is FAT32, check for files larger than 4GB
+#    if drive_format == 'FAT32':
+#        for root, _, files in os.walk(source_dir):
+#            for file in files:
+#                src_path = os.path.join(root, file)
+#                if os.path.getsize(src_path) > FAT32_MAX_FILE_SIZE:
+#                    print(f"Error: The file {src_path} exceeds the 4GB limit of FAT32 file system.")
+##                    print(f"Options - Assuming WIM file: \n1. Split the WIM file into two files (beyond the scope of this script). \
+##\n2. Select a destination not formatted with FAT32 and see if WIM file can be shrunk then try copy again.")
+#                    print("Copy operation aborted.")
+#                    return False
+#
+#    # Gather all files to be copied
+#    file_list = []
+#    for root, _, files in os.walk(source_dir):
+#        for file in files:
+#            src_path = os.path.join(root, file)
+#            rel_path = os.path.relpath(src_path, source_dir)
+#            dest_path = os.path.join(destination_dir, rel_path)
+#            file_list.append((src_path, dest_path))
+#
+#    # Determine the number of CPUs to use
+#    #TOTAL_CPUS = mp.cpu_count()
+#    avg_file_size = sum(os.path.getsize(f[0]) for f in file_list) // len(file_list) if file_list else 0
+#    cpu_count = min(TOTAL_CPUS, max(1, avg_file_size // (sum(os.path.getsize(f[0]) for f in file_list) // TOTAL_CPUS)))
+#
+#    # Divide the file list into chunks for multiprocessing
+#    chunk_size = len(file_list) // cpu_count
+#    file_chunks = [file_list[i:i + chunk_size] for i in range(0, len(file_list), chunk_size)]
+#
+#    with Pool(processes=cpu_count) as pool:
+#        pool.map(copy_files_chunk, file_chunks)
+#    return True
+#    
+#    
+#def copy_files_from_msgpack(msgpack_file, destination_dir):
+#    # Load file paths from msgpack file
+#    with open(msgpack_file, 'rb') as f:
+#        file_list = msgpack.unpack(f)
+#    
+#    # Check the destination file system format
+#    drive_format = get_drive_format(destination_dir)
+#
+#    # Prepare file list with full source and destination paths
+#    full_file_list = []
+#    missing_files = []
+#    for src_path in file_list:
+#        if not os.path.exists(src_path):
+#            missing_files.append(src_path)
+#            continue
+#        rel_path = os.path.relpath(src_path, os.path.commonpath(file_list))
+#        dest_path = os.path.join(destination_dir, rel_path)
+#        full_file_list.append((src_path, dest_path))
+#
+#    # Log missing files if any
+#    if missing_files:
+#        print("The following files listed in the msgpack file do not exist:")
+#        for missing_file in missing_files:
+#            print(missing_file)
+#        print("Copy operation aborted due to missing files.")
+#        return False
+#
+#    if drive_format == 'FAT32':
+#        for src_path, dest_path in full_file_list:
+#            if os.path.getsize(src_path) > FAT32_MAX_FILE_SIZE:
+#                print(f"Error: The file {src_path} exceeds the 4GB limit of FAT32 file system.")
+#                print("Copy operation aborted.")
+#                return False
+#
+#    # Determine the number of CPUs to use
+#    #total_cpus = mp.cpu_count()
+#    avg_file_size = sum(os.path.getsize(f[0]) for f in full_file_list if os.path.exists(f[0])) // len(full_file_list) if full_file_list else 0
+#    cpu_count = min(TOTAL_CPUS, max(1, avg_file_size // (sum(os.path.getsize(f[0]) for f in full_file_list if os.path.exists(f[0])) // TOTAL_CPUS)))
+#
+#    # Divide the file list into chunks for multiprocessing
+#    chunk_size = len(full_file_list) // cpu_count
+#    file_chunks = [full_file_list[i:i + chunk_size] for i in range(0, len(full_file_list), chunk_size)]
+#
+#    with Pool(processes=cpu_count) as pool:
+#        pool.map(copy_files_chunk, file_chunks)
+#    return True
 
 
 def copy_files_chunk(file_chunk):
@@ -159,64 +159,71 @@ def create_msgpack(directory):
     print(f"msgpack file created at {msgpack_file}")
 
 
-def copy_tree_via_PathOrBinary(source_dir, destination_dir, ref_file=False):
-    full_file_list = []
-    missing_files = []
-    file_list = []
+def copy_tree_via_PathOrBinary(source, destination_dir) -> bool:
+    
+    ########################### sub function ###########################
+    def is_msgpack_file(path):
+        return os.path.isfile(path) and path.endswith('.msgpack')
+    ########################### sub function ###########################
+    
+    if os.path.isdir(source):
+        # Handle directory as source
+        file_list = []
+        for root, _, files in os.walk(source):
+            for file in files:
+                src_path = os.path.join(root, file)
+                rel_path = os.path.relpath(src_path, source)
+                dest_path = os.path.join(destination_dir, rel_path)
+                file_list.append((src_path, dest_path))
+    elif is_msgpack_file(source):
+        # Handle msgpack file as source
+        with open(source, 'rb') as f:
+            file_list = msgpack.unpack(f)
+        base_dir = os.path.commonpath(file_list)
+        full_file_list = []
+        missing_files = []
+        for src_path in file_list:
+            if not os.path.exists(src_path):
+                missing_files.append(src_path)
+                continue
+            rel_path = os.path.relpath(src_path, base_dir)
+            dest_path = os.path.join(destination_dir, rel_path)
+            full_file_list.append((src_path, dest_path))
+        if missing_files:
+            print("The following files listed in the msgpack file do not exist:")
+            for missing_file in missing_files:
+                print(missing_file)
+            print("Copy operation aborted due to missing files.")
+            return False
+        file_list = full_file_list
+    else:
+        print(f"Invalid source: {source}. It must be a directory or a msgpack file.")
+        return False
+
+    # Check the destination file system format
     drive_format = get_drive_format(destination_dir)
 
-    if ref_file:
-        if os.path.exists(directory_tree.msgpack):
-            msgpack_file = directory_tree.msgpack
-            with open(msgpack_file, 'rb') as f:
-                file_list = msgpack.unpack(f)
-    
-    # Prepare file list with full source and destination paths
-    for src_path in file_list:
-        if not os.path.exists(src_path):
-            missing_files.append(src_path)
-            continue
-        rel_path = os.path.relpath(src_path, os.path.commonpath(file_list))
-        dest_path = os.path.join(destination_dir, rel_path)
-        full_file_list.append((src_path, dest_path))
-
-
-
     if drive_format == 'FAT32':
-        for src_path, dest_path in full_file_list:
+        for src_path, dest_path in file_list:
             if os.path.getsize(src_path) > FAT32_MAX_FILE_SIZE:
                 print(f"Error: The file {src_path} exceeds the 4GB limit of FAT32 file system.")
                 print("Copy operation aborted.")
                 return False
-            
-    # Log missing files if any
-    if missing_files:
-        print("The following files listed in the msgpack file do not exist:")
-        for missing_file in missing_files:
-            print(missing_file)
-        print("Copy operation aborted due to missing files.")
-        return False
 
     # Determine the number of CPUs to use
-    #total_cpus = mp.cpu_count()
-    avg_file_size = sum(os.path.getsize(f[0]) 
-    for f in full_file_list 
-    if os.path.exists(f[0])) // len(full_file_list) \
-    if full_file_list else 0
-    
-    cpu_count = min(TOTAL_CPUS, 
-    max(1, avg_file_size // 
-    (sum(os.path.getsize(f[0]) 
-    for f in full_file_list 
-    if os.path.exists(f[0])) // TOTAL_CPUS)))
+    total_cpus = mp.cpu_count()
+    avg_file_size = sum(os.path.getsize(f[0]) for f in file_list if os.path.exists(f[0])) // len(file_list) if file_list else 0
+    cpu_count = min(total_cpus, max(1, avg_file_size // (sum(os.path.getsize(f[0]) for f in file_list if os.path.exists(f[0])) // total_cpus)))
 
     # Divide the file list into chunks for multiprocessing
-    chunk_size = len(full_file_list) // cpu_count
-    file_chunks = [full_file_list[i:i + chunk_size] for i in range(0, len(full_file_list), chunk_size)]
+    chunk_size = len(file_list) // cpu_count
+    file_chunks = [file_list[i:i + chunk_size] for i in range(0, len(file_list), chunk_size)]
 
     with Pool(processes=cpu_count) as pool:
         pool.map(copy_files_chunk, file_chunks)
+        
     return True
+
 
 def main():
     # Copy files from the source directory to the destination directory using multiprocessing
@@ -237,9 +244,9 @@ def main():
         return
 
     if args.copy:
-        source_dir, destination_dir = args.copy
+        source, destination_dir = args.copy
     elif args.use_msgpack:
-        msgpack_file, destination_dir = args.use_msgpack
+        source, destination_dir = args.use_msgpack
     else:
         parser.error("Invalid arguments. Use --create_msgpack or --copy <source> <destination>.")
 
@@ -264,10 +271,10 @@ def main():
         if args.copy:
             # copy file from source dir to destination dir using multiprocessing
             print(f"starting file copy...\n")
-            copyOperation = copy_tree_via_PathOrBinary(source_dir, destination_dir)
+            copyOperation = copy_tree_via_PathOrBinary(source, destination_dir)
         elif args.use_msgpack:
             #copyOperation = copy_files_from_msgpack(msgpack_file, destination_dir, ref_file=True)
-            copyOperation = copy_tree_via_PathOrBinary(msgpack_file, destination_dir, ref_file=True)
+            copyOperation = copy_tree_via_PathOrBinary(source, destination_dir)
     finally:
         # stop progress indicator thread
         progress_indicator_running = False

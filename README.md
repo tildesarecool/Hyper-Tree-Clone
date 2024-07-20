@@ -2,13 +2,51 @@
 
 ### Extremely fast directory tree duplicator for Windows.
 
-12 July 2024
-
 This is something of a utility spin off from another script I am developing called [tiny11 python edition](https://github.com/tildesarecool/Tiny11PyEd). Which in turn is heavily inspired by a PowerShell script called Tiny11.
 
-I wanted to see how fast of a file copy utility I could make after watching and reading several things about the [1 billion row challenge](https://github.com/gunnarmorling/1brc/tree/main?tab=readme-ov-file) and associated Python version of the solution (all of which is entirely over my head).
+I wanted to see how fast of a file copy utility I could make after watching and reading about the [1 billion row challenge](https://github.com/gunnarmorling/1brc/tree/main?tab=readme-ov-file) and associated Python version of the solution (all of which is entirely over my head).
 
 I'm hoping to have some (very unscientific) time comparisons between reguarly drag/drop file copy, robocopy and this script. As well as comparisons on different sets of hardware. The benchmark against which all will be tested will be a Windows 11 install ISO.
+
+Notes: 
+* this utility **does note** claim to be faster than xcopy or robocopy and is **is not** claiming to be a replacement.
+* As mentioned in the title this script is **only tested on Windows and only intended for Windows** (for linux etc there's about 1,000 copy utilities.)
+* I am a beginner level programmer and therefore this script is not intended for production use in any way. 
+
+
+**update 19 July:** I made it to a major milestone today in as much as the script does in fact copy files from a source to a destination based on either a source drectory path or a message pack binary file with the source information embedded in it. 
+
+Examples of usage:
+
+Normal copy of folder tree:
+**--copy**
+```.\HyperTreeClone.py  --copy <source folder>  <destination folder>```
+
+Example:
+```.\HyperTreeClone.py  --copy "P:\Windows Install Customization" "P:\Windows Install Customization_copy"```
+Note the double quotes around the paths: for paths with spaces these are not optional.
+
+Create a message pack binary file based on the root of a folder tree (the "source" if you will):
+**--create_msgpack**
+
+```.\HyperTreeClone.py  --create_msgpack <source folder> ```
+
+This will create a message pack file in the current directory where the script is beign run with a default file name, which is currently directory_tree.msgpack
+
+Example:
+```.\HyperTreeClone.py  --create_msgpack "P:\Windows Install Customization" ```
+
+
+Using a created message pack file as the source for the file copy. There's no check or warning before the operation yet though, so re-create the message file if there's any doubts about it being the wrong one. Or just rename the message pack file manually immediately after creating it.
+
+**--use_msgpack**
+The argument takes the form:
+```.\HyperTreeClone.py  --use_msgpack "directory_tree.msgpack" <destination folder>"```
+
+Example:
+```.\HyperTreeClone.py  --use_msgpack "directory_tree.msgpack" "P:\Windows Install Customization_copy_2"```
+Any valid message pack file can be used here, but the script does check on the **.msgpack** file extension - it doesn't error out if a different filename from "directory_tree.msgpack" is used, other words.
+
 
 #### Dev log
 
@@ -89,3 +127,48 @@ I got the file copying to work using a a binary file as the reference. Basically
 The bad news is that it's some how a slower copy operation than just using drag/drop to copy when I tested it.
 
 Also bad news against my better judgement I used a lot of GPT assistance to writ the functionality. Like a lot. So although it technically works the code is an extreme mess. I'm just resigned to the assumption I'll be re-writing the whole thing from scratch. Which is likely what I would end up doing anyway.  Abandon all hope any who dare to try and veiw the code. It will not go well.
+
+##### 19 July 2024
+
+Note: below isn't necessarily supposed to imply work will stop on this script, it's more of a noteworthy checkpoint.
+
+Well there's mostly good news today: the script is now working. By which I mean all three arguments are working without errors and succesfully copying files. 
+
+Here's the latest test results:
+
+test condiations:
+internal nvme->internal nvme
+directory with total size of 16MBs
+Tree consists entirely of files less than 50KBs
+
+normal file copy using --copy:
+5 seconds
+
+same tree file copy using msgpack:
+26 seconds
+
+so apparently this isn't optmized for a tree that's entirely small files
+
+Second test tree:
+internal nvme->internal nvme
+tree has a total of ~30 gigabytes
+mixture of file sizes from a few KBs to 5+ GBs
+
+normal file copy using --copy:
+8 min 34 seconds
+
+same tree file copy using msgpack:
+2 min 45 seconds
+
+Much greater difference in copy operations between the two and clearly the msgpack approach is better.
+
+The bad news?
+
+There's quite a few "long hanging fruit" improvements to make:
+
+* custom file name for the msgpack file/generate a file name based on path it was created in combination with something else like a date stamp
+* a way to "query" a msgpackfile to confirm the path it was pointed at when created
+* let the user decide to overwrite or not existing files in a destination
+* I would like to have an option of using a message pack file or text-based file like JSON. For testing and troubleshooting if nothing else.
+
+Besides that the code needs to be cleaned up for readaibility, documentation and the argument help needs much better wording and extensive examples.
