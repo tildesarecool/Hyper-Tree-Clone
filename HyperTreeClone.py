@@ -14,7 +14,7 @@ from multiprocessing import Pool
 
 # Flag to control the progress indicator thread
 progress_indicator_running = False
-TOTAL_CPUS = mp.cpu_count()
+TOTAL_CPUS = mp.cpu_count() 
 
 # Hardcoded source and destination directories for development purposes
 #SOURCE_DIR = "C:\\Users\\Keith\\Documents\\tiny11\\win11"
